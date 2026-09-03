@@ -1,433 +1,145 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
 
 <title>Rai Sport Live</title>
 
 <style>
+
 html,
 body {
+
     margin: 0;
     padding: 0;
+
     width: 100%;
     height: 100%;
+
     background: #000;
+
     overflow: hidden;
+
 }
 
 body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+    position: fixed;
+
+    inset: 0;
+
 }
 
-video {
+#frame {
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
     width: 100vw;
     height: 100vh;
-    background: #000;
-    object-fit: contain;
-    display: block;
-}
-</style>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17"></script>
+    border: 0;
+
+    background: #000;
+
+}
+
+</style>
 
 </head>
 
 <body>
 
-<video
-    id="video"
-    autoplay
-    muted
-    playsinline
-    webkit-playsinline
-    controls="false">
-</video>
+<iframe
+    id="frame"
+    src="https://www.raiplay.it/dirette/raisport"
+    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+    allowfullscreen
+    scrolling="no">
+</iframe>
+
 
 <script>
 
-(function () {
-
-    const video = document.getElementById("video");
-
-    /*
-     * Rai Sport HD
-     *
-     * output=16 = stream HLS
-     */
-    const STREAM =
-        "https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=16";
-
-    let hls = null;
-    let reconnectTimer = null;
-    let started = false;
+/*
+====================================================
+RAI SPORT LIVE
+Virgin Active - OptiSigns
+====================================================
+*/
 
 
-    /*
-     * AVVIO VIDEO
-     */
-    function forcePlay() {
+const frame = document.getElementById("frame");
 
-        video.muted = true;
 
-        const promise = video.play();
+/*
+----------------------------------------------------
+Ricarica periodica di sicurezza
+----------------------------------------------------
+*/
 
-        if (promise !== undefined) {
+const RELOAD_INTERVAL = 30 * 60 * 1000;
 
-            promise.catch(function () {
 
-                /*
-                 * Secondo tentativo
-                 */
-                setTimeout(function () {
+setTimeout(function () {
 
-                    video.muted = true;
+    location.reload();
 
-                    video.play().catch(function () {});
+}, RELOAD_INTERVAL);
 
-                }, 1000);
 
-            });
+/*
+----------------------------------------------------
+Se OptiSigns/Android mette la pagina in background,
+ricarichiamo il frame quando torna visibile.
+----------------------------------------------------
+*/
+
+document.addEventListener(
+    "visibilitychange",
+    function () {
+
+        if (!document.hidden) {
+
+            setTimeout(function () {
+
+                frame.src =
+                    "https://www.raiplay.it/dirette/raisport";
+
+            }, 1000);
 
         }
 
     }
+);
 
 
-    /*
-     * RIAVVIO COMPLETO
-     */
-    function restartStream() {
+/*
+----------------------------------------------------
+Gestione errore iframe
+----------------------------------------------------
+*/
 
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
-        }
+frame.addEventListener(
+    "error",
+    function () {
 
-        reconnectTimer = setTimeout(function () {
+        setTimeout(function () {
 
             location.reload();
 
-        }, 3000);
+        }, 5000);
 
     }
-
-
-    /*
-     * HLS.JS
-     */
-    function startHLS() {
-
-        if (!window.Hls || !Hls.isSupported()) {
-            return false;
-        }
-
-        try {
-
-            hls = new Hls({
-
-                enableWorker: true,
-
-                lowLatencyMode: false,
-
-                backBufferLength: 10,
-
-                maxBufferLength: 20,
-
-                maxMaxBufferLength: 30,
-
-                liveSyncDurationCount: 3,
-
-                liveMaxLatencyDurationCount: 6,
-
-                manifestLoadingMaxRetry: 3,
-
-                manifestLoadingRetryDelay: 1000,
-
-                levelLoadingMaxRetry: 3,
-
-                levelLoadingRetryDelay: 1000,
-
-                fragLoadingMaxRetry: 3,
-
-                fragLoadingRetryDelay: 1000
-
-            });
-
-
-            hls.attachMedia(video);
-
-
-            hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-
-                hls.loadSource(STREAM);
-
-            });
-
-
-            hls.on(Hls.Events.MANIFEST_PARSED, function () {
-
-                started = true;
-
-                forcePlay();
-
-            });
-
-
-            hls.on(Hls.Events.FRAG_BUFFERED, function () {
-
-                if (video.paused) {
-                    forcePlay();
-                }
-
-            });
-
-
-            hls.on(Hls.Events.ERROR, function (event, data) {
-
-                console.log(
-                    "Rai Sport HLS:",
-                    data.type,
-                    data.details,
-                    data.fatal
-                );
-
-
-                if (!data.fatal) {
-                    return;
-                }
-
-
-                switch (data.type) {
-
-                    case Hls.ErrorTypes.NETWORK_ERROR:
-
-                        console.log("Errore rete - recupero");
-
-                        try {
-                            hls.startLoad();
-                        } catch (e) {
-                            restartStream();
-                        }
-
-                        break;
-
-
-                    case Hls.ErrorTypes.MEDIA_ERROR:
-
-                        console.log("Errore media - recupero");
-
-                        try {
-                            hls.recoverMediaError();
-                        } catch (e) {
-                            restartStream();
-                        }
-
-                        break;
-
-
-                    default:
-
-                        try {
-                            hls.destroy();
-                        } catch (e) {}
-
-                        restartStream();
-
-                        break;
-
-                }
-
-            });
-
-
-            return true;
-
-        } catch (error) {
-
-            console.log("Errore HLS:", error);
-
-            return false;
-
-        }
-
-    }
-
-
-    /*
-     * HLS NATIVO
-     *
-     * Alcuni dispositivi Android/TV lo supportano
-     */
-    function startNative() {
-
-        if (video.canPlayType("application/vnd.apple.mpegurl")) {
-
-            video.src = STREAM;
-
-            video.addEventListener(
-                "loadedmetadata",
-                function () {
-
-                    started = true;
-                    forcePlay();
-
-                },
-                { once: true }
-            );
-
-            video.addEventListener(
-                "canplay",
-                function () {
-
-                    forcePlay();
-
-                }
-            );
-
-            video.addEventListener(
-                "error",
-                function () {
-
-                    restartStream();
-
-                }
-            );
-
-            return true;
-        }
-
-        return false;
-
-    }
-
-
-    /*
-     * NASCONDI CONTROLLI
-     */
-    video.controls = false;
-
-
-    /*
-     * AVVIO
-     */
-    if (!startNative()) {
-        startHLS();
-    }
-
-
-    /*
-     * CONTROLLO AUTOPLAY
-     */
-    setInterval(function () {
-
-        if (!started) {
-            return;
-        }
-
-        if (video.paused) {
-            forcePlay();
-        }
-
-    }, 3000);
-
-
-    /*
-     * CONTROLLO BLOCCO STREAM
-     *
-     * Se il video rimane fermo a 0 secondi
-     * per troppo tempo, ricarica la pagina.
-     */
-    let lastTime = -1;
-    let lastChange = Date.now();
-
-
-    setInterval(function () {
-
-        const currentTime = video.currentTime;
-
-        if (currentTime !== lastTime) {
-
-            lastTime = currentTime;
-            lastChange = Date.now();
-
-            return;
-        }
-
-
-        if (
-            started &&
-            Date.now() - lastChange > 15000
-        ) {
-
-            console.log(
-                "Stream fermo - riavvio"
-            );
-
-            location.reload();
-
-        }
-
-    }, 5000);
-
-
-    /*
-     * EVENTO FINE VIDEO
-     */
-    video.addEventListener(
-        "ended",
-        function () {
-
-            location.reload();
-
-        }
-    );
-
-
-    /*
-     * VISIBILITY CHANGE
-     *
-     * Utile per OptiSigns/Android.
-     */
-    document.addEventListener(
-        "visibilitychange",
-        function () {
-
-            if (!document.hidden) {
-
-                setTimeout(function () {
-                    forcePlay();
-                }, 500);
-
-            }
-
-        }
-    );
-
-
-    /*
-     * CLICK / TOUCH
-     *
-     * Se il dispositivo richiede un'interazione
-     * iniziale, il primo touch avvia il video.
-     */
-    document.addEventListener(
-        "click",
-        forcePlay,
-        { once: true }
-    );
-
-
-    document.addEventListener(
-        "touchstart",
-        forcePlay,
-        { once: true }
-    );
-
-
-})();
+);
 
 </script>
 
