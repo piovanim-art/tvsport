@@ -2,12 +2,8 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-
 <meta name="viewport"
-      content="width=device-width,
-               initial-scale=1.0,
-               maximum-scale=1.0,
-               user-scalable=no">
+      content="width=device-width, initial-scale=1.0">
 
 <title>Rai Sport Live</title>
 
@@ -21,28 +17,16 @@
         overflow: hidden;
     }
 
-    #video {
-        position: fixed;
-        inset: 0;
-        width: 100%;
-        height: 100%;
+    video {
+        width: 100vw;
+        height: 100vh;
         object-fit: contain;
         background: #000;
-    }
-
-    #status {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        color: white;
-        font-family: Arial, sans-serif;
-        font-size: 22px;
-        text-align: center;
-        z-index: 10;
-        display: none;
+        display: block;
     }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 
 <body>
@@ -56,210 +40,117 @@
     controls="false">
 </video>
 
-<div id="status">Caricamento Rai Sport...</div>
-
-<!-- HLS.JS -->
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
-
 <script>
 
 const video = document.getElementById("video");
-const status = document.getElementById("status");
 
 /*
-    STREAM RAI SPORT
+   STREAM RAI SPORT
 */
-const streamUrl =
-"https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=7&forceUserAgent=";
+const stream =
+"https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=7&forceUserAgent=raiplayappletv";
 
 
-/*
-    NASCONDI MESSAGGIO
-*/
-function hideStatus() {
-    status.style.display = "none";
-}
+function startVideo() {
 
+    // Se il dispositivo supporta HLS nativamente
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
 
-/*
-    MOSTRA MESSAGGIO
-*/
-function showStatus(text) {
-    status.innerHTML = text;
-    status.style.display = "block";
-}
+        video.src = stream;
 
-
-/*
-    AVVIO PLAYER
-*/
-function startPlayer() {
-
-    showStatus("Caricamento Rai Sport...");
-
-    /*
-        CASO 1:
-        HLS.JS disponibile
-    */
-    if (window.Hls && Hls.isSupported()) {
-
-        const hls = new Hls({
-            enableWorker: false,
-
-            /*
-                Impostazioni più conservative
-                per Android/WebView/OptiSigns
-            */
-            lowLatencyMode: false,
-            backBufferLength: 30,
-            maxBufferLength: 30,
-
-            manifestLoadingMaxRetry: 5,
-            manifestLoadingRetryDelay: 2000,
-
-            levelLoadingMaxRetry: 5,
-            levelLoadingRetryDelay: 2000,
-
-            fragLoadingMaxRetry: 5,
-            fragLoadingRetryDelay: 2000
+        video.play().catch(() => {
+            setTimeout(() => {
+                video.play().catch(() => {});
+            }, 2000);
         });
 
-        hls.loadSource(streamUrl);
+    }
 
+    // Chrome / Android / OptiSigns
+    else if (Hls.isSupported()) {
+
+        const hls = new Hls({
+            autoStartLoad: true,
+            startLevel: -1,
+            enableWorker: true,
+            lowLatencyMode: false,
+            backBufferLength: 30
+        });
+
+        hls.loadSource(stream);
         hls.attachMedia(video);
 
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
 
-            hideStatus();
-
             video.muted = true;
 
-            const playPromise = video.play();
+            video.play().catch(() => {
 
-            if (playPromise !== undefined) {
-                playPromise.catch(function () {
-                    /*
-                        Alcuni dispositivi bloccano
-                        l'autoplay.
-                    */
-                    video.muted = true;
+                setTimeout(() => {
                     video.play().catch(() => {});
-                });
-            }
-        });
+                }, 1000);
 
+            });
+
+        });
 
         hls.on(Hls.Events.ERROR, function(event, data) {
 
-            console.log(
-                "HLS ERROR:",
-                data.type,
-                data.details,
-                data.fatal
-            );
+            console.log("HLS ERROR:", data);
 
             if (data.fatal) {
 
-                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                setTimeout(() => {
 
-                    console.log("Tentativo recupero rete...");
+                    try {
+                        hls.destroy();
+                    } catch(e) {}
 
-                    hls.startLoad();
+                    startVideo();
 
-                } else if (
-                    data.type === Hls.ErrorTypes.MEDIA_ERROR
-                ) {
+                }, 5000);
 
-                    console.log("Tentativo recupero media...");
-
-                    hls.recoverMediaError();
-
-                } else {
-
-                    /*
-                        Riavvio completo dopo errore grave
-                    */
-                    setTimeout(function () {
-                        location.reload();
-                    }, 5000);
-                }
             }
-        });
-
-        return;
-    }
-
-
-    /*
-        CASO 2:
-        Browser con HLS nativo
-        (Safari / alcuni Smart TV)
-    */
-    if (
-        video.canPlayType("application/vnd.apple.mpegurl") ||
-        video.canPlayType("application/x-mpegURL")
-    ) {
-
-        video.src = streamUrl;
-
-        video.muted = true;
-
-        video.addEventListener("loadedmetadata", function () {
-
-            hideStatus();
-
-            video.play().catch(() => {});
 
         });
 
-        return;
     }
 
-
-    /*
-        NESSUN SUPPORTO
-    */
-    showStatus(
-        "Il dispositivo non supporta la riproduzione HLS."
-    );
 }
 
 
-/*
-    AVVIO
-*/
-startPlayer();
+// Avvio
+startVideo();
 
 
-/*
-    SE IL VIDEO SI FERMA,
-    PROVA A RIPARTIRE
-*/
-video.addEventListener("pause", function () {
+// Tentativi automatici di PLAY
+setInterval(() => {
 
-    setTimeout(function () {
+    if (video.paused) {
+        video.muted = true;
 
-        if (video.paused) {
-            video.play().catch(() => {});
-        }
+        video.play().catch(() => {});
+    }
 
-    }, 1500);
+}, 3000);
+
+
+// Se il video si blocca, riparte
+video.addEventListener("stalled", () => {
+
+    setTimeout(() => {
+        video.play().catch(() => {});
+    }, 2000);
 
 });
 
 
-/*
-    SE FINISCE / SI BLOCCA
-*/
-video.addEventListener("stalled", function () {
+// Quando torna online
+window.addEventListener("online", () => {
 
-    console.log("Stream stalled");
-
-    setTimeout(function () {
-
-        video.play().catch(() => {});
-
-    }, 3000);
+    setTimeout(() => {
+        startVideo();
+    }, 1000);
 
 });
 
