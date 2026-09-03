@@ -12,292 +12,256 @@
 <title>Rai Sport Live</title>
 
 <style>
-html,
-body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    overflow: hidden;
-}
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+    }
 
-video {
-    position: fixed;
-    top: 0;
-    left: 0;
+    #video {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000;
+    }
 
-    width: 100vw;
-    height: 100vh;
-
-    background: #000;
-
-    object-fit: contain;
-
-    border: 0;
-    outline: none;
-}
+    #status {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 22px;
+        text-align: center;
+        z-index: 10;
+        display: none;
+    }
 </style>
-
 </head>
 
 <body>
 
 <video
-    id="raiVideo"
+    id="video"
     autoplay
     muted
     playsinline
     webkit-playsinline
-    preload="auto">
+    controls="false">
 </video>
 
+<div id="status">Caricamento Rai Sport...</div>
+
+<!-- HLS.JS -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
 
 <script>
 
-const video = document.getElementById("raiVideo");
+const video = document.getElementById("video");
+const status = document.getElementById("status");
+
+/*
+    STREAM RAI SPORT
+*/
+const streamUrl =
+"https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=7&forceUserAgent=";
 
 
 /*
-====================================================
-RAI SPORT HD
-====================================================
+    NASCONDI MESSAGGIO
 */
-
-const RAI_URL =
-"https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=7&forceUserAgent=raiplayappletv";
-
-
-/*
-====================================================
-IMPOSTAZIONI VIDEO
-====================================================
-*/
-
-video.autoplay = true;
-video.muted = true;
-video.defaultMuted = true;
-video.volume = 0;
-video.playsInline = true;
-
-
-/*
-====================================================
-CARICAMENTO
-====================================================
-*/
-
-function loadRai() {
-
-    console.log("Caricamento Rai Sport...");
-
-    video.pause();
-
-    video.removeAttribute("src");
-
-    video.load();
-
-    video.src = RAI_URL;
-
-    video.load();
-
-    playVideo();
+function hideStatus() {
+    status.style.display = "none";
 }
 
 
 /*
-====================================================
-PLAY
-====================================================
+    MOSTRA MESSAGGIO
 */
+function showStatus(text) {
+    status.innerHTML = text;
+    status.style.display = "block";
+}
 
-function playVideo() {
 
-    video.muted = true;
-    video.defaultMuted = true;
-    video.volume = 0;
+/*
+    AVVIO PLAYER
+*/
+function startPlayer() {
 
-    const promise = video.play();
+    showStatus("Caricamento Rai Sport...");
 
-    if (promise !== undefined) {
+    /*
+        CASO 1:
+        HLS.JS disponibile
+    */
+    if (window.Hls && Hls.isSupported()) {
 
-        promise.catch(function(error) {
-
-            console.log(
-                "Autoplay bloccato:",
-                error
-            );
+        const hls = new Hls({
+            enableWorker: false,
 
             /*
-            Secondo tentativo
+                Impostazioni più conservative
+                per Android/WebView/OptiSigns
             */
+            lowLatencyMode: false,
+            backBufferLength: 30,
+            maxBufferLength: 30,
 
-            setTimeout(function() {
+            manifestLoadingMaxRetry: 5,
+            manifestLoadingRetryDelay: 2000,
 
-                video.muted = true;
+            levelLoadingMaxRetry: 5,
+            levelLoadingRetryDelay: 2000,
 
-                video.play().catch(function() {});
+            fragLoadingMaxRetry: 5,
+            fragLoadingRetryDelay: 2000
+        });
 
-            }, 1000);
+        hls.loadSource(streamUrl);
+
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+
+            hideStatus();
+
+            video.muted = true;
+
+            const playPromise = video.play();
+
+            if (playPromise !== undefined) {
+                playPromise.catch(function () {
+                    /*
+                        Alcuni dispositivi bloccano
+                        l'autoplay.
+                    */
+                    video.muted = true;
+                    video.play().catch(() => {});
+                });
+            }
+        });
+
+
+        hls.on(Hls.Events.ERROR, function(event, data) {
+
+            console.log(
+                "HLS ERROR:",
+                data.type,
+                data.details,
+                data.fatal
+            );
+
+            if (data.fatal) {
+
+                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+
+                    console.log("Tentativo recupero rete...");
+
+                    hls.startLoad();
+
+                } else if (
+                    data.type === Hls.ErrorTypes.MEDIA_ERROR
+                ) {
+
+                    console.log("Tentativo recupero media...");
+
+                    hls.recoverMediaError();
+
+                } else {
+
+                    /*
+                        Riavvio completo dopo errore grave
+                    */
+                    setTimeout(function () {
+                        location.reload();
+                    }, 5000);
+                }
+            }
+        });
+
+        return;
+    }
+
+
+    /*
+        CASO 2:
+        Browser con HLS nativo
+        (Safari / alcuni Smart TV)
+    */
+    if (
+        video.canPlayType("application/vnd.apple.mpegurl") ||
+        video.canPlayType("application/x-mpegURL")
+    ) {
+
+        video.src = streamUrl;
+
+        video.muted = true;
+
+        video.addEventListener("loadedmetadata", function () {
+
+            hideStatus();
+
+            video.play().catch(() => {});
 
         });
 
+        return;
     }
+
+
+    /*
+        NESSUN SUPPORTO
+    */
+    showStatus(
+        "Il dispositivo non supporta la riproduzione HLS."
+    );
 }
 
 
 /*
-====================================================
-VIDEO PRONTO
-====================================================
+    AVVIO
 */
-
-video.addEventListener(
-    "loadedmetadata",
-    function() {
-
-        console.log(
-            "Rai Sport: metadata caricati"
-        );
-
-        playVideo();
-
-    }
-);
-
-
-video.addEventListener(
-    "canplay",
-    function() {
-
-        console.log(
-            "Rai Sport: canplay"
-        );
-
-        playVideo();
-
-    }
-);
-
-
-video.addEventListener(
-    "playing",
-    function() {
-
-        console.log(
-            "Rai Sport: PLAYING"
-        );
-
-    }
-);
+startPlayer();
 
 
 /*
-====================================================
-SE SI FERMA
-====================================================
+    SE IL VIDEO SI FERMA,
+    PROVA A RIPARTIRE
 */
+video.addEventListener("pause", function () {
 
-video.addEventListener(
-    "pause",
-    function() {
+    setTimeout(function () {
 
-        console.log(
-            "Rai Sport: video in pausa"
-        );
+        if (video.paused) {
+            video.play().catch(() => {});
+        }
 
-        setTimeout(function() {
+    }, 1500);
 
-            playVideo();
-
-        }, 1000);
-
-    }
-);
+});
 
 
 /*
-====================================================
-ERRORE
-====================================================
+    SE FINISCE / SI BLOCCA
 */
+video.addEventListener("stalled", function () {
 
-video.addEventListener(
-    "error",
-    function() {
+    console.log("Stream stalled");
 
-        console.log(
-            "Rai Sport: errore video"
-        );
+    setTimeout(function () {
 
-        setTimeout(function() {
+        video.play().catch(() => {});
 
-            loadRai();
+    }, 3000);
 
-        }, 5000);
-
-    }
-);
-
-
-/*
-====================================================
-STALL
-====================================================
-*/
-
-video.addEventListener(
-    "stalled",
-    function() {
-
-        console.log(
-            "Rai Sport: stream stalled"
-        );
-
-        setTimeout(function() {
-
-            if (video.paused) {
-                loadRai();
-            }
-
-        }, 5000);
-
-    }
-);
-
-
-/*
-====================================================
-WATCHDOG
-====================================================
-*/
-
-setInterval(function() {
-
-    video.muted = true;
-    video.defaultMuted = true;
-    video.volume = 0;
-
-    if (video.paused) {
-
-        console.log(
-            "Watchdog: riavvio video"
-        );
-
-        playVideo();
-
-    }
-
-}, 5000);
-
-
-/*
-====================================================
-AVVIO
-====================================================
-*/
-
-loadRai();
+});
 
 </script>
 
