@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Rai Sport HD</title>
-
 <style>
 html, body {
     margin: 0;
@@ -16,69 +14,21 @@ html, body {
     overflow: hidden;
 }
 
-video {
+iframe {
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    background: #000;
+    border: 0;
 }
 </style>
-
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 
 <body>
 
-<video
-    id="video"
-    autoplay
-    muted
-    playsinline
-    controls="false">
-</video>
-
-<script>
-
-const video = document.getElementById("video");
-
-const stream =
-"https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=7&forceUserAgent=raiplayappletv";
-
-function startVideo() {
-
-    video.muted = true;
-
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-
-        video.src = stream;
-
-        video.play().catch(() => {
-            setTimeout(() => video.play(), 1000);
-        });
-
-    } else if (Hls.isSupported()) {
-
-        const hls = new Hls({
-            autoStartLoad: true,
-            enableWorker: true,
-            lowLatencyMode: false
-        });
-
-        hls.loadSource(stream);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-            video.play().catch(() => {
-                setTimeout(() => video.play(), 1000);
-            });
-        });
-
-    }
-}
-
-startVideo();
-
-</script>
+<iframe
+    src="https://www.rainews.it/dirette/rai-sport-hd-live-diretta-streaming"
+    allow="autoplay; fullscreen"
+    allowfullscreen>
+</iframe>
 
 </body>
 </html>
