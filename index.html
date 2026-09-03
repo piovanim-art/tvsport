@@ -1,34 +1,811 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    overflow: hidden;
-}
+  <meta charset="UTF-8">
 
-iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-}
-</style>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+
+  <title>Rai Sport Live</title>
+
+  <style>
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+    }
+
+    body {
+      position: fixed;
+      inset: 0;
+    }
+
+    #video {
+      position: absolute;
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+
+      display: block;
+
+      background: #000;
+
+      object-fit: contain;
+
+      border: 0;
+      outline: 0;
+    }
+
+  </style>
+
 </head>
+
 
 <body>
 
-<iframe
-    src="https://www.rainews.it/dirette/rai-sport-hd-live-diretta-streaming"
-    allow="autoplay; fullscreen"
-    allowfullscreen>
-</iframe>
+  <video
+    id="video"
+    autoplay
+    muted
+    playsinline
+    webkit-playsinline
+    preload="auto"
+    disablepictureinpicture
+    controlslist="nodownload noplaybackrate nofullscreen"
+  ></video>
+
+
+  <!-- HLS.JS -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
+
+
+  <script>
+
+    /*
+    =========================================================
+    RAI SPORT LIVE
+    OTTIMIZZATO PER OPTISIGNS / TV
+
+    AUDIO DISATTIVATO
+    AUTOPLAY
+    =========================================================
+    */
+
+
+    /*
+    =========================================================
+    URL RAI SPORT
+    IMPORTANTE:
+    NON aggiungere .m3u8
+    =========================================================
+    */
+
+    const STREAM_URL =
+      "https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=7&forceUserAgent=raiplayappletv";
+
+
+    const video =
+      document.getElementById("video");
+
+
+    let hls = null;
+
+    let retryTimer = null;
+
+
+    /*
+    =========================================================
+    IMPOSTAZIONI VIDEO
+    =========================================================
+    */
+
+    video.autoplay = true;
+
+    video.muted = true;
+
+    video.defaultMuted = true;
+
+    video.volume = 0;
+
+    video.playsInline = true;
+
+    video.controls = false;
+
+
+    video.setAttribute("autoplay", "");
+
+    video.setAttribute("muted", "");
+
+    video.setAttribute("playsinline", "");
+
+    video.setAttribute("webkit-playsinline", "");
+
+
+    /*
+    =========================================================
+    AVVIO VIDEO
+    =========================================================
+    */
+
+    function playVideo() {
+
+      video.muted = true;
+
+      video.defaultMuted = true;
+
+      video.volume = 0;
+
+
+      try {
+
+        const promise = video.play();
+
+
+        if (promise !== undefined) {
+
+          promise
+            .then(function () {
+
+              console.log(
+                "RAI SPORT: VIDEO AVVIATO"
+              );
+
+            })
+            .catch(function (error) {
+
+              console.log(
+                "RAI SPORT: AUTOPLAY BLOCCATO",
+                error
+              );
+
+            });
+
+        }
+
+      } catch (error) {
+
+        console.log(
+          "RAI SPORT: ERRORE PLAY",
+          error
+        );
+
+      }
+
+    }
+
+
+    /*
+    =========================================================
+    DISTRUGGI HLS
+    =========================================================
+    */
+
+    function destroyHLS() {
+
+      if (hls) {
+
+        try {
+          hls.destroy();
+        } catch (e) {}
+
+        hls = null;
+
+      }
+
+    }
+
+
+    /*
+    =========================================================
+    RICONNESSIONE
+    =========================================================
+    */
+
+    function reconnect() {
+
+      if (retryTimer) {
+        return;
+      }
+
+
+      console.log(
+        "RAI SPORT: RICONNESSIONE..."
+      );
+
+
+      retryTimer = setTimeout(function () {
+
+        retryTimer = null;
+
+        destroyHLS();
+
+        startStream();
+
+      }, 5000);
+
+    }
+
+
+    /*
+    =========================================================
+    HLS.JS
+    =========================================================
+    */
+
+    function startHLS() {
+
+      destroyHLS();
+
+
+      hls = new Hls({
+
+        /*
+        Avvio automatico
+        */
+
+        autoStartLoad: true,
+
+        startLevel: -1,
+
+        capLevelToPlayerSize: true,
+
+
+        /*
+        Buffer
+        */
+
+        maxBufferLength: 15,
+
+        maxMaxBufferLength: 30,
+
+        backBufferLength: 15,
+
+        maxBufferHole: 0.5,
+
+
+        /*
+        Prestazioni
+        */
+
+        enableWorker: true,
+
+        lowLatencyMode: false,
+
+
+        /*
+        Retry
+        */
+
+        fragLoadingMaxRetry: 6,
+
+        manifestLoadingMaxRetry: 6,
+
+        levelLoadingMaxRetry: 6,
+
+
+        fragLoadingRetryDelay: 1000,
+
+        manifestLoadingRetryDelay: 1000,
+
+        levelLoadingRetryDelay: 1000,
+
+
+        /*
+        Timeout
+        */
+
+        fragLoadingTimeOut: 10000,
+
+        manifestLoadingTimeOut: 10000,
+
+        levelLoadingTimeOut: 10000
+
+      });
+
+
+      /*
+      =======================================================
+      COLLEGA PLAYER
+      =======================================================
+      */
+
+      hls.attachMedia(video);
+
+
+      /*
+      =======================================================
+      PLAYER COLLEGATO
+      =======================================================
+      */
+
+      hls.on(
+        Hls.Events.MEDIA_ATTACHED,
+        function () {
+
+          console.log(
+            "RAI SPORT: PLAYER COLLEGATO"
+          );
+
+
+          hls.loadSource(
+            STREAM_URL
+          );
+
+        }
+      );
+
+
+      /*
+      =======================================================
+      MANIFEST DISPONIBILE
+      =======================================================
+      */
+
+      hls.on(
+        Hls.Events.MANIFEST_PARSED,
+        function () {
+
+          console.log(
+            "RAI SPORT: STREAM DISPONIBILE"
+          );
+
+
+          playVideo();
+
+
+          /*
+          Secondo tentativo
+          */
+
+          setTimeout(
+            playVideo,
+            1000
+          );
+
+
+          /*
+          Terzo tentativo
+          */
+
+          setTimeout(
+            playVideo,
+            3000
+          );
+
+        }
+      );
+
+
+      /*
+      =======================================================
+      PRIMO SEGMENTO
+      =======================================================
+      */
+
+      hls.on(
+        Hls.Events.FRAG_BUFFERED,
+        function () {
+
+          if (video.paused) {
+
+            playVideo();
+
+          }
+
+        }
+      );
+
+
+      /*
+      =======================================================
+      ERRORI HLS
+      =======================================================
+      */
+
+      hls.on(
+        Hls.Events.ERROR,
+        function (
+          event,
+          data
+        ) {
+
+          console.log(
+            "RAI SPORT HLS:",
+            data.type,
+            data.details
+          );
+
+
+          if (!data.fatal) {
+            return;
+          }
+
+
+          /*
+          ERRORE DI RETE
+          */
+
+          if (
+            data.type ===
+            Hls.ErrorTypes.NETWORK_ERROR
+          ) {
+
+            try {
+
+              hls.startLoad();
+
+              playVideo();
+
+            } catch (e) {
+
+              reconnect();
+
+            }
+
+            return;
+
+          }
+
+
+          /*
+          ERRORE MEDIA
+          */
+
+          if (
+            data.type ===
+            Hls.ErrorTypes.MEDIA_ERROR
+          ) {
+
+            try {
+
+              hls.recoverMediaError();
+
+              setTimeout(
+                playVideo,
+                1000
+              );
+
+            } catch (e) {
+
+              reconnect();
+
+            }
+
+            return;
+
+          }
+
+
+          /*
+          ALTRI ERRORI
+          */
+
+          reconnect();
+
+        }
+      );
+
+    }
+
+
+    /*
+    =========================================================
+    AVVIO STREAM
+    =========================================================
+    */
+
+    function startStream() {
+
+      destroyHLS();
+
+
+      /*
+      -------------------------------------------------------
+      HLS NATIVO
+      -------------------------------------------------------
+      */
+
+      if (
+        video.canPlayType(
+          "application/vnd.apple.mpegurl"
+        )
+      ) {
+
+        console.log(
+          "RAI SPORT: HLS NATIVO"
+        );
+
+
+        video.src =
+          STREAM_URL;
+
+
+        video.load();
+
+
+        video.addEventListener(
+          "loadedmetadata",
+          function nativePlay() {
+
+            playVideo();
+
+
+            setTimeout(
+              playVideo,
+              1000
+            );
+
+
+            setTimeout(
+              playVideo,
+              3000
+            );
+
+
+            video.removeEventListener(
+              "loadedmetadata",
+              nativePlay
+            );
+
+          }
+        );
+
+
+        return;
+
+      }
+
+
+      /*
+      -------------------------------------------------------
+      HLS.JS
+      -------------------------------------------------------
+      */
+
+      if (
+        window.Hls &&
+        Hls.isSupported()
+      ) {
+
+        console.log(
+          "RAI SPORT: HLS.JS"
+        );
+
+
+        startHLS();
+
+
+        return;
+
+      }
+
+
+      /*
+      -------------------------------------------------------
+      NON SUPPORTATO
+      -------------------------------------------------------
+      */
+
+      console.log(
+        "RAI SPORT: HLS NON SUPPORTATO"
+      );
+
+
+      reconnect();
+
+    }
+
+
+    /*
+    =========================================================
+    EVENTO PLAYING
+    =========================================================
+    */
+
+    video.addEventListener(
+      "playing",
+      function () {
+
+        console.log(
+          "RAI SPORT: RIPRODUZIONE ATTIVA"
+        );
+
+      }
+    );
+
+
+    /*
+    =========================================================
+    CANPLAY
+    =========================================================
+    */
+
+    video.addEventListener(
+      "canplay",
+      function () {
+
+        if (video.paused) {
+
+          playVideo();
+
+        }
+
+      }
+    );
+
+
+    /*
+    =========================================================
+    PAUSA
+    =========================================================
+    */
+
+    video.addEventListener(
+      "pause",
+      function () {
+
+        console.log(
+          "RAI SPORT: VIDEO IN PAUSA"
+        );
+
+
+        setTimeout(
+          playVideo,
+          500
+        );
+
+
+        setTimeout(
+          playVideo,
+          1500
+        );
+
+
+        setTimeout(
+          playVideo,
+          3000
+        );
+
+      }
+    );
+
+
+    /*
+    =========================================================
+    STALLED
+    =========================================================
+    */
+
+    video.addEventListener(
+      "stalled",
+      function () {
+
+        console.log(
+          "RAI SPORT: STREAM STALLED"
+        );
+
+
+        setTimeout(
+          function () {
+
+            if (
+              video.paused ||
+              video.readyState < 3
+            ) {
+
+              playVideo();
+
+            }
+
+          },
+          5000
+        );
+
+      }
+    );
+
+
+    /*
+    =========================================================
+    STREAM TERMINATO
+    =========================================================
+    */
+
+    video.addEventListener(
+      "ended",
+      function () {
+
+        console.log(
+          "RAI SPORT: STREAM TERMINATO"
+        );
+
+
+        reconnect();
+
+      }
+    );
+
+
+    /*
+    =========================================================
+    ERRORE VIDEO
+    =========================================================
+    */
+
+    video.addEventListener(
+      "error",
+      function () {
+
+        console.log(
+          "RAI SPORT: ERRORE VIDEO"
+        );
+
+
+        reconnect();
+
+      }
+    );
+
+
+    /*
+    =========================================================
+    WATCHDOG
+    =========================================================
+    */
+
+    setInterval(
+      function () {
+
+        /*
+        Audio sempre disattivato
+        */
+
+        video.muted = true;
+
+        video.defaultMuted = true;
+
+        video.volume = 0;
+
+
+        /*
+        Se il video è fermo,
+        prova a ripartire.
+        */
+
+        if (
+          video.paused &&
+          video.readyState >= 2
+        ) {
+
+          playVideo();
+
+        }
+
+      },
+      5000
+    );
+
+
+    /*
+    =========================================================
+    AVVIO
+    =========================================================
+    */
+
+    startStream();
+
+  </script>
 
 </body>
+
 </html>
