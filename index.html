@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Rai Sport - Diretta Live</title>
+<title>Rai Sport + HD - Diretta</title>
 
 <style>
 html,
@@ -17,16 +17,19 @@ body {
     background: #000;
 }
 
+body {
+    width: 100vw;
+    height: 100vh;
+}
+
 iframe {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
     border: 0;
     margin: 0;
     padding: 0;
-    background: #000;
 }
 </style>
 </head>
@@ -34,11 +37,9 @@ iframe {
 <body>
 
 <iframe
-    src="https://www.raiplay.it/dirette/raisport"
+    src="https://www.rainews.it/dirette/rai-sport-hd-live-diretta-streaming"
     allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-    allowfullscreen
-    frameborder="0"
-    scrolling="no">
+    allowfullscreen>
 </iframe>
 
 </body>
