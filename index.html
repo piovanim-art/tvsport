@@ -1,38 +1,149 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
 
 <title>Sportitalia SI-HD Live</title>
 
+
 <style>
+
+/* =====================================================
+   PAGINA
+   ===================================================== */
+
 html,
 body {
-    margin: 0;
-    padding: 0;
+
     width: 100%;
     height: 100%;
+
+    margin: 0;
+    padding: 0;
+
     background: #000;
+
     overflow: hidden;
 }
 
+
+/* =====================================================
+   SPORTITALIA
+   ===================================================== */
+
 iframe {
+
     position: fixed;
+
     inset: 0;
+
     width: 100%;
     height: 100%;
+
     border: 0;
+
     margin: 0;
     padding: 0;
+
     background: #000;
+
+    opacity: 0;
+
+    transition: none;
 }
+
+
+/* =====================================================
+   SCHERMATA LOGO
+   ===================================================== */
+
+#logoScreen {
+
+    position: fixed;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: #000;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    z-index: 9999;
+
+    opacity: 1;
+
+    transition: none;
+}
+
+
+/* =====================================================
+   LOGO VIRGIN ACTIVE
+
+   NESSUNA ANIMAZIONE
+   NESSUN SCALE
+   NESSUN TRANSITION
+   ===================================================== */
+
+#logo {
+
+    display: block;
+
+    width: auto;
+    height: auto;
+
+    max-width: none;
+    max-height: none;
+
+    margin: 0;
+    padding: 0;
+
+    transform: none;
+
+    animation: none;
+
+    transition: none;
+}
+
 </style>
+
 </head>
+
 
 <body>
 
+
+<!-- =====================================================
+     SCHERMATA INIZIALE VIRGIN ACTIVE
+     ===================================================== -->
+
+<div id="logoScreen">
+
+    <img
+        id="logo"
+        src="logo.png"
+        alt="Virgin Active"
+    >
+
+</div>
+
+
+<!-- =====================================================
+     SPORTITALIA SI-HD
+     ===================================================== -->
+
 <iframe
+    id="sportitalia"
     src="https://sportitalialive.it/sihd/"
     allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
     allowfullscreen
@@ -40,28 +151,62 @@ iframe {
     scrolling="no">
 </iframe>
 
+
 <script>
 
-/*
-========================================================
-SPORTITALIA SI-HD LIVE
-VIRGIN ACTIVE
-========================================================
-*/
-
-/*
-Pagina ufficiale Sportitalia SI-HD
-*/
-const SPORTITALIA_URL =
-    "https://sportitalialive.it/sihd/";
+/* =====================================================
+   SPORTITALIA SI-HD LIVE
+   VIRGIN ACTIVE
+   ===================================================== */
 
 
-/*
---------------------------------------------------------
-Ricarica automatica dopo 6 ore.
-Serve per mantenere fresca la sessione.
---------------------------------------------------------
-*/
+/* -----------------------------------------------------
+   ELEMENTI
+   ----------------------------------------------------- */
+
+const logoScreen =
+    document.getElementById("logoScreen");
+
+const sportitalia =
+    document.getElementById("sportitalia");
+
+
+/* -----------------------------------------------------
+   TEMPO SCHERMATA LOGO
+
+   5 SECONDI
+   ----------------------------------------------------- */
+
+const LOGO_TIME = 5000;
+
+
+/* -----------------------------------------------------
+   IL LOGO RIMANE FISSO
+   MENTRE SPORTITALIA CARICA
+   ----------------------------------------------------- */
+
+setTimeout(function () {
+
+    /*
+    Nasconde completamente
+    la schermata Virgin Active
+    */
+
+    logoScreen.style.display = "none";
+
+
+    /*
+    Mostra Sportitalia
+    */
+
+    sportitalia.style.opacity = "1";
+
+}, LOGO_TIME);
+
+
+/* -----------------------------------------------------
+   RICARICA AUTOMATICA DOPO 6 ORE
+   ----------------------------------------------------- */
 
 setTimeout(function () {
 
@@ -70,19 +215,23 @@ setTimeout(function () {
 }, 6 * 60 * 60 * 1000);
 
 
-/*
---------------------------------------------------------
-Se la pagina viene persa, ricarica.
---------------------------------------------------------
-*/
+/* -----------------------------------------------------
+   SE LA PAGINA VIENE PERSA,
+   RICARICA
+   ----------------------------------------------------- */
 
-window.addEventListener("error", function () {
+window.addEventListener(
+    "error",
+    function () {
 
-    setTimeout(function () {
-        location.reload();
-    }, 10000);
+        setTimeout(function () {
 
-});
+            location.reload();
+
+        }, 10000);
+
+    }
+);
 
 </script>
 
