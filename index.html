@@ -6,26 +6,20 @@
 
 <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    content="width=device-width, initial-scale=1.0"
 >
 
-<title>Virgin Active - Clock / Sportitalia</title>
-
+<title>Virgin Active - Sportitalia Live</title>
 
 <style>
 
-/* =====================================================
-   PAGINA
-   ===================================================== */
-
 html,
 body {
+    margin: 0;
+    padding: 0;
 
     width: 100%;
     height: 100%;
-
-    margin: 0;
-    padding: 0;
 
     background: #000;
 
@@ -34,10 +28,10 @@ body {
 
 
 /* =====================================================
-   IFRAME ORARIO
+   SPORTITALIA
    ===================================================== */
 
-#clockFrame {
+#sportitalia {
 
     position: fixed;
 
@@ -54,16 +48,14 @@ body {
     background: #000;
 
     z-index: 1;
-
-    opacity: 1;
 }
 
 
 /* =====================================================
-   IFRAME SPORTITALIA
+   PAGINA ORARIO
    ===================================================== */
 
-#sportitaliaFrame {
+#clock {
 
     position: fixed;
 
@@ -79,36 +71,9 @@ body {
 
     background: #000;
 
-    z-index: 2;
+    z-index: 10;
 
-    opacity: 0;
-
-    transition: opacity 0.8s ease;
-
-    pointer-events: none;
-}
-
-
-/* =====================================================
-   SCHERMATA NERA DI TRANSIZIONE
-   ===================================================== */
-
-#transitionScreen {
-
-    position: fixed;
-
-    inset: 0;
-
-    width: 100%;
-    height: 100%;
-
-    background: #000;
-
-    z-index: 3;
-
-    opacity: 0;
-
-    pointer-events: none;
+    opacity: 1;
 
     transition: opacity 0.8s ease;
 }
@@ -117,30 +82,17 @@ body {
 
 </head>
 
-
 <body>
 
 
 <!-- =====================================================
-     PAGINA ORARIO VIRGIN ACTIVE
+     SPORTITALIA
      
-     QUESTA È LA TUA PAGINA GITHUB GIÀ ESISTENTE
+     QUESTO È LO STESSO LINK CHE FUNZIONAVA PRIMA.
      ===================================================== -->
 
 <iframe
-    id="clockFrame"
-    src="https://piovanim-art.github.io/oraribrescia/"
-    frameborder="0"
-    scrolling="no">
-</iframe>
-
-
-<!-- =====================================================
-     SPORTITALIA SI-HD
-     ===================================================== -->
-
-<iframe
-    id="sportitaliaFrame"
+    id="sportitalia"
     src="https://sportitalialive.it/sihd/"
     allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
     allowfullscreen
@@ -150,81 +102,53 @@ body {
 
 
 <!-- =====================================================
-     TRANSIZIONE NERA
+     OROLOGIO VIRGIN ACTIVE
+     
+     VIENE MOSTRATO SOPRA SPORTITALIA
      ===================================================== -->
 
-<div id="transitionScreen"></div>
+<iframe
+    id="clock"
+    src="https://piovanim-art.github.io/oraribrescia/"
+    frameborder="0"
+    scrolling="no">
+</iframe>
 
 
 <script>
 
 /* =====================================================
-   ELEMENTI
+   OROLOGIO VISIBILE PER 15 SECONDI
    ===================================================== */
 
-const clockFrame =
-    document.getElementById("clockFrame");
+const clock = document.getElementById("clock");
 
-const sportitaliaFrame =
-    document.getElementById("sportitaliaFrame");
-
-const transitionScreen =
-    document.getElementById("transitionScreen");
-
-
-/* =====================================================
-   TEMPO ORARIO
-   15 SECONDI
-   ===================================================== */
-
-const CLOCK_TIME = 15000;
-
-
-/* =====================================================
-   DOPO 15 SECONDI
-   PASSIAMO A SPORTITALIA
-   ===================================================== */
 
 setTimeout(function () {
 
-    console.log(
-        "Virgin Active Clock: fine schermata orario"
-    );
+    /*
+     * Dissolvenza dell'orologio
+     */
+
+    clock.style.opacity = "0";
 
 
     /*
-    Mostra Sportitalia
-    */
-
-    sportitaliaFrame.style.opacity = "1";
-
-    sportitaliaFrame.style.pointerEvents = "auto";
-
-
-    /*
-    Dissolvenza dell'orario
-    */
-
-    clockFrame.style.opacity = "0";
-
-
-    /*
-    Dopo la dissolvenza
-    nascondiamo completamente l'orario
-    */
+     * Dopo la dissolvenza lo eliminiamo
+     */
 
     setTimeout(function () {
 
-        clockFrame.style.display = "none";
+        clock.style.display = "none";
 
     }, 800);
 
 
-}, CLOCK_TIME);
+}, 15000);
 
 
 /* =====================================================
-   RICARICA AUTOMATICA DOPO 6 ORE
+   RICARICA AUTOMATICA OGNI 6 ORE
    ===================================================== */
 
 setTimeout(function () {
@@ -235,24 +159,21 @@ setTimeout(function () {
 
 
 /* =====================================================
-   GESTIONE ERRORI
+   SE LA PAGINA PRINCIPALE HA UN ERRORE,
+   PROVA A RICARICARLA
    ===================================================== */
 
-window.addEventListener(
-    "error",
-    function () {
+window.addEventListener("error", function () {
 
-        setTimeout(function () {
+    setTimeout(function () {
 
-            location.reload();
+        location.reload();
 
-        }, 10000);
+    }, 10000);
 
-    }
-);
+});
 
 </script>
-
 
 </body>
 </html>
