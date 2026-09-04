@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="it">
-
 <head>
 
 <meta charset="UTF-8">
@@ -10,7 +9,7 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
 >
 
-<title>Sportitalia SI-HD Live</title>
+<title>Virgin Active - Clock / Sportitalia</title>
 
 
 <style>
@@ -35,10 +34,10 @@ body {
 
 
 /* =====================================================
-   SPORTITALIA
+   IFRAME ORARIO
    ===================================================== */
 
-iframe {
+#clockFrame {
 
     position: fixed;
 
@@ -54,17 +53,47 @@ iframe {
 
     background: #000;
 
-    opacity: 0;
+    z-index: 1;
 
-    transition: opacity 0.8s ease;
+    opacity: 1;
 }
 
 
 /* =====================================================
-   SCHERMATA LOGO
+   IFRAME SPORTITALIA
    ===================================================== */
 
-#logoScreen {
+#sportitaliaFrame {
+
+    position: fixed;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    border: 0;
+
+    margin: 0;
+    padding: 0;
+
+    background: #000;
+
+    z-index: 2;
+
+    opacity: 0;
+
+    transition: opacity 0.8s ease;
+
+    pointer-events: none;
+}
+
+
+/* =====================================================
+   SCHERMATA NERA DI TRANSIZIONE
+   ===================================================== */
+
+#transitionScreen {
 
     position: fixed;
 
@@ -75,46 +104,13 @@ iframe {
 
     background: #000;
 
-    display: flex;
+    z-index: 3;
 
-    align-items: center;
-    justify-content: center;
-
-    z-index: 9999;
-
-    opacity: 1;
-
-    transition: opacity 0.8s ease;
+    opacity: 0;
 
     pointer-events: none;
-}
 
-
-/* =====================================================
-   LOGO VIRGIN ACTIVE
-
-   NESSUNA ANIMAZIONE
-   NESSUN RIDIMENSIONAMENTO
-   ===================================================== */
-
-#logo {
-
-    display: block;
-
-    width: auto;
-    height: auto;
-
-    max-width: none;
-    max-height: none;
-
-    margin: 0;
-    padding: 0;
-
-    transform: none;
-
-    animation: none;
-
-    transition: none;
+    transition: opacity 0.8s ease;
 }
 
 </style>
@@ -126,18 +122,17 @@ iframe {
 
 
 <!-- =====================================================
-     LOGO VIRGIN ACTIVE
+     PAGINA ORARIO VIRGIN ACTIVE
+     
+     QUESTA È LA TUA PAGINA GITHUB GIÀ ESISTENTE
      ===================================================== -->
 
-<div id="logoScreen">
-
-    <img
-        id="logo"
-        src="logo.png"
-        alt="Virgin Active"
-    >
-
-</div>
+<iframe
+    id="clockFrame"
+    src="https://piovanim-art.github.io/oraribrescia/"
+    frameborder="0"
+    scrolling="no">
+</iframe>
 
 
 <!-- =====================================================
@@ -145,96 +140,92 @@ iframe {
      ===================================================== -->
 
 <iframe
-    id="sportitalia"
-
+    id="sportitaliaFrame"
     src="https://sportitalialive.it/sihd/"
-
     allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-
     allowfullscreen
-
     frameborder="0"
-
     scrolling="no">
 </iframe>
+
+
+<!-- =====================================================
+     TRANSIZIONE NERA
+     ===================================================== -->
+
+<div id="transitionScreen"></div>
 
 
 <script>
 
 /* =====================================================
-   SPORTITALIA SI-HD
+   ELEMENTI
    ===================================================== */
 
+const clockFrame =
+    document.getElementById("clockFrame");
 
-/* -----------------------------------------------------
-   ELEMENTI
-   ----------------------------------------------------- */
+const sportitaliaFrame =
+    document.getElementById("sportitaliaFrame");
 
-const logoScreen =
-    document.getElementById("logoScreen");
-
-const sportitalia =
-    document.getElementById("sportitalia");
+const transitionScreen =
+    document.getElementById("transitionScreen");
 
 
-/* -----------------------------------------------------
-   QUANDO SPORTITALIA HA CARICATO LA PAGINA
-   ----------------------------------------------------- */
+/* =====================================================
+   TEMPO ORARIO
+   15 SECONDI
+   ===================================================== */
 
-sportitalia.addEventListener(
-    "load",
-    function () {
-
-        console.log(
-            "Sportitalia: pagina caricata"
-        );
+const CLOCK_TIME = 15000;
 
 
-        /*
-        Aspettiamo che il browser abbia
-        completato il rendering della pagina.
-        */
+/* =====================================================
+   DOPO 15 SECONDI
+   PASSIAMO A SPORTITALIA
+   ===================================================== */
 
-        requestAnimationFrame(function () {
+setTimeout(function () {
 
-            requestAnimationFrame(function () {
-
-                /*
-                Mostra Sportitalia
-                */
-
-                sportitalia.style.opacity = "1";
+    console.log(
+        "Virgin Active Clock: fine schermata orario"
+    );
 
 
-                /*
-                Dissolvenza del logo
-                */
+    /*
+    Mostra Sportitalia
+    */
 
-                logoScreen.style.opacity = "0";
+    sportitaliaFrame.style.opacity = "1";
 
-
-                /*
-                Rimuove completamente
-                il logo dopo la dissolvenza
-                */
-
-                setTimeout(function () {
-
-                    logoScreen.style.display = "none";
-
-                }, 800);
-
-            });
-
-        });
-
-    }
-);
+    sportitaliaFrame.style.pointerEvents = "auto";
 
 
-/* -----------------------------------------------------
+    /*
+    Dissolvenza dell'orario
+    */
+
+    clockFrame.style.opacity = "0";
+
+
+    /*
+    Dopo la dissolvenza
+    nascondiamo completamente l'orario
+    */
+
+    setTimeout(function () {
+
+        clockFrame.style.display = "none";
+
+    }, 800);
+
+
+}, CLOCK_TIME);
+
+
+/* =====================================================
    RICARICA AUTOMATICA DOPO 6 ORE
-   ----------------------------------------------------- */
+   ===================================================== */
 
 setTimeout(function () {
 
@@ -243,9 +234,9 @@ setTimeout(function () {
 }, 6 * 60 * 60 * 1000);
 
 
-/* -----------------------------------------------------
+/* =====================================================
    GESTIONE ERRORI
-   ----------------------------------------------------- */
+   ===================================================== */
 
 window.addEventListener(
     "error",
@@ -262,6 +253,6 @@ window.addEventListener(
 
 </script>
 
-</body>
 
+</body>
 </html>
