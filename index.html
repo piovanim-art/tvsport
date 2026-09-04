@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
 
 <meta charset="UTF-8">
@@ -9,12 +10,13 @@
     content="width=device-width, initial-scale=1.0"
 >
 
-<title>Virgin Active - Sportitalia Live</title>
+<title>Virgin Active - Sportitalia Live TEST</title>
 
 <style>
 
 html,
 body {
+
     margin: 0;
     padding: 0;
 
@@ -24,6 +26,7 @@ body {
     background: #000;
 
     overflow: hidden;
+
 }
 
 
@@ -40,19 +43,17 @@ body {
     width: 100%;
     height: 100%;
 
-    border: 0;
-
-    margin: 0;
-    padding: 0;
+    object-fit: cover;
 
     background: #000;
 
     z-index: 1;
+
 }
 
 
 /* =====================================================
-   PAGINA ORARIO
+   OROLOGIO VIRGIN ACTIVE
    ===================================================== */
 
 #clock {
@@ -76,35 +77,34 @@ body {
     opacity: 1;
 
     transition: opacity 0.8s ease;
+
 }
 
 </style>
 
 </head>
 
+
 <body>
 
 
 <!-- =====================================================
-     SPORTITALIA
+     SPORTITALIA LIVE
      
-     QUESTO È LO STESSO LINK CHE FUNZIONAVA PRIMA.
+     NUOVO STREAM HLS
      ===================================================== -->
 
-<iframe
+<video
     id="sportitalia"
-    src="https://sportitalialive.it/sihd/"
-    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-    allowfullscreen
-    frameborder="0"
-    scrolling="no">
-</iframe>
+    autoplay
+    muted
+    playsinline
+    controls="false">
+</video>
 
 
 <!-- =====================================================
      OROLOGIO VIRGIN ACTIVE
-     
-     VIENE MOSTRATO SOPRA SPORTITALIA
      ===================================================== -->
 
 <iframe
@@ -115,7 +115,128 @@ body {
 </iframe>
 
 
+<!-- =====================================================
+     HLS.JS
+     ===================================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+
 <script>
+
+/* =====================================================
+   SPORTITALIA HLS
+   ===================================================== */
+
+const video = document.getElementById("sportitalia");
+
+const stream =
+    "https://edge-001.streamup.eu/sportitalia/sihd_abr/playlist.m3u8";
+
+
+/* =====================================================
+   AVVIO STREAM
+   ===================================================== */
+
+if (Hls.isSupported()) {
+
+    const hls = new Hls({
+
+        enableWorker: true,
+
+        lowLatencyMode: true,
+
+        backBufferLength: 30
+
+    });
+
+
+    hls.loadSource(stream);
+
+    hls.attachMedia(video);
+
+
+    hls.on(Hls.Events.MANIFEST_PARSED, function () {
+
+        video.play().catch(function () {
+
+            console.log("Autoplay bloccato");
+
+        });
+
+    });
+
+
+    /* =================================================
+       RECUPERO AUTOMATICO DA ERRORI HLS
+       ================================================= */
+
+    hls.on(Hls.Events.ERROR, function (event, data) {
+
+        console.log("HLS ERROR:", data);
+
+
+        if (data.fatal) {
+
+            switch (data.type) {
+
+                case Hls.ErrorTypes.NETWORK_ERROR:
+
+                    console.log("Errore rete - riavvio HLS");
+
+                    hls.startLoad();
+
+                    break;
+
+
+                case Hls.ErrorTypes.MEDIA_ERROR:
+
+                    console.log("Errore media - recupero HLS");
+
+                    hls.recoverMediaError();
+
+                    break;
+
+
+                default:
+
+                    console.log("Errore HLS fatale");
+
+                    hls.destroy();
+
+                    setTimeout(function () {
+
+                        location.reload();
+
+                    }, 10000);
+
+                    break;
+
+            }
+
+        }
+
+    });
+
+}
+
+
+/* =====================================================
+   SUPPORTO HLS NATIVO
+   ===================================================== */
+
+else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+
+    video.src = stream;
+
+    video.addEventListener("loadedmetadata", function () {
+
+        video.play();
+
+    });
+
+}
+
 
 /* =====================================================
    OROLOGIO VISIBILE PER 15 SECONDI
@@ -126,16 +247,8 @@ const clock = document.getElementById("clock");
 
 setTimeout(function () {
 
-    /*
-     * Dissolvenza dell'orologio
-     */
-
     clock.style.opacity = "0";
 
-
-    /*
-     * Dopo la dissolvenza lo eliminiamo
-     */
 
     setTimeout(function () {
 
@@ -159,8 +272,7 @@ setTimeout(function () {
 
 
 /* =====================================================
-   SE LA PAGINA PRINCIPALE HA UN ERRORE,
-   PROVA A RICARICARLA
+   RECUPERO GENERALE
    ===================================================== */
 
 window.addEventListener("error", function () {
@@ -175,5 +287,7 @@ window.addEventListener("error", function () {
 
 </script>
 
+
 </body>
+
 </html>
