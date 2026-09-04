@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
 
 <meta charset="UTF-8">
@@ -55,7 +56,7 @@ iframe {
 
     opacity: 0;
 
-    transition: none;
+    transition: opacity 0.8s ease;
 }
 
 
@@ -83,7 +84,9 @@ iframe {
 
     opacity: 1;
 
-    transition: none;
+    transition: opacity 0.8s ease;
+
+    pointer-events: none;
 }
 
 
@@ -91,8 +94,7 @@ iframe {
    LOGO VIRGIN ACTIVE
 
    NESSUNA ANIMAZIONE
-   NESSUN SCALE
-   NESSUN TRANSITION
+   NESSUN RIDIMENSIONAMENTO
    ===================================================== */
 
 #logo {
@@ -124,7 +126,7 @@ iframe {
 
 
 <!-- =====================================================
-     SCHERMATA INIZIALE VIRGIN ACTIVE
+     LOGO VIRGIN ACTIVE
      ===================================================== -->
 
 <div id="logoScreen">
@@ -144,10 +146,15 @@ iframe {
 
 <iframe
     id="sportitalia"
+
     src="https://sportitalialive.it/sihd/"
+
     allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+
     allowfullscreen
+
     frameborder="0"
+
     scrolling="no">
 </iframe>
 
@@ -155,8 +162,7 @@ iframe {
 <script>
 
 /* =====================================================
-   SPORTITALIA SI-HD LIVE
-   VIRGIN ACTIVE
+   SPORTITALIA SI-HD
    ===================================================== */
 
 
@@ -172,36 +178,58 @@ const sportitalia =
 
 
 /* -----------------------------------------------------
-   TEMPO SCHERMATA LOGO
-
-   5 SECONDI
+   QUANDO SPORTITALIA HA CARICATO LA PAGINA
    ----------------------------------------------------- */
 
-const LOGO_TIME = 5000;
+sportitalia.addEventListener(
+    "load",
+    function () {
+
+        console.log(
+            "Sportitalia: pagina caricata"
+        );
 
 
-/* -----------------------------------------------------
-   IL LOGO RIMANE FISSO
-   MENTRE SPORTITALIA CARICA
-   ----------------------------------------------------- */
+        /*
+        Aspettiamo che il browser abbia
+        completato il rendering della pagina.
+        */
 
-setTimeout(function () {
+        requestAnimationFrame(function () {
 
-    /*
-    Nasconde completamente
-    la schermata Virgin Active
-    */
+            requestAnimationFrame(function () {
 
-    logoScreen.style.display = "none";
+                /*
+                Mostra Sportitalia
+                */
+
+                sportitalia.style.opacity = "1";
 
 
-    /*
-    Mostra Sportitalia
-    */
+                /*
+                Dissolvenza del logo
+                */
 
-    sportitalia.style.opacity = "1";
+                logoScreen.style.opacity = "0";
 
-}, LOGO_TIME);
+
+                /*
+                Rimuove completamente
+                il logo dopo la dissolvenza
+                */
+
+                setTimeout(function () {
+
+                    logoScreen.style.display = "none";
+
+                }, 800);
+
+            });
+
+        });
+
+    }
+);
 
 
 /* -----------------------------------------------------
@@ -216,8 +244,7 @@ setTimeout(function () {
 
 
 /* -----------------------------------------------------
-   SE LA PAGINA VIENE PERSA,
-   RICARICA
+   GESTIONE ERRORI
    ----------------------------------------------------- */
 
 window.addEventListener(
@@ -236,4 +263,5 @@ window.addEventListener(
 </script>
 
 </body>
+
 </html>
